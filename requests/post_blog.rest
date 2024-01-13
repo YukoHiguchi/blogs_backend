@@ -1,4 +1,4 @@
-POST http://localhost:3001/api/blogs
+POST http://localhost:3003/api/blogs
 content-type: application/json
 
 {
@@ -6,4 +6,5 @@ content-type: application/json
   "author": "Michael Chan",
   "url": "https://reactpatterns.com/",
   "likes": 7,
+  "userId":"65a0478a7637ded9efce3a7c"
 }
