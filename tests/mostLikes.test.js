@@ -51,14 +51,9 @@ describe('mostLikes', () => {
       __v: 0,
     },
   ]
-
-  const robert = {
-    author: 'Edsger W. Dijkstra',
-    likes: 17,
-  }
-
+  const mostLikes = { author: 'Edsger W. Dijkstra', likes: 17 }
   test('when list has multiple blogs, return author who has the most likes', () => {
     const result = listHelper.mostLikes(blogs)
-    expect(result).toEqual(robert)
+    expect(result).toEqual(mostLikes)
   })
 })
