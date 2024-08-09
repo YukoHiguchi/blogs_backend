@@ -17,7 +17,7 @@ const testUser = {
 
 let token
 
-describe('when there is initially some blogs saved', () => {
+describe.only('when there is initially some blogs saved', () => {
   beforeEach(async () => {
     await Blog.deleteMany({})
     await User.deleteMany({})
@@ -41,7 +41,6 @@ describe('when there is initially some blogs saved', () => {
       .expect('Content-Type', /application\/json/)
 
     assert.strictEqual(response.body.length, helper.initialBlogs.length)
-    expect(response.body.length).toBe(helper.initialBlogs.length)
   })
 
   test('blogs are returned with id property', async () => {
@@ -175,30 +174,48 @@ describe('when there is initially some blogs saved', () => {
     assert(!titles.includes(blogToDelete.title))
   })
 
-  test('a blog can be updated', async () => {
-    const blogsAtStart = await helper.blogsInDb()
-    const blogToUpdate = blogsAtStart[0]
+  test.only('a blog can be fetched by id', async () => {
+    const blogs = await helper.blogsInDb()
+    const firstBlogId = blogs[0].id
+    const response = await api.get(`/api/blogs/${firstBlogId}`).expect(200)
+    assert.strictEqual(blogs[0].id, response.body.id)
+    assert.strictEqual(blogs[0].title, response.body.title)
+  })
 
+  test('a blog can be updated', async () => {
     const newBlog = {
-      title: 'Updated Blog',
-      author: 'Updated Author',
-      url: 'http://example.com/updated',
-      likes: 10,
+      title: 'New Blog',
+      author: 'New Author',
+      url: 'http://example.com/new',
+      likes: 5,
     }
 
-    await api.put(`/api/blogs/${blogToUpdate.id}`).send(newBlog).expect(200)
+    const response = await api
+      .post('/api/blogs')
+      .send(newBlog)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(201)
+
+    const id = response.body.id
+
+    const likesUpdated = { ...newBlog, likes: newBlog.likes + 1 }
+    await api
+      .put(`/api/blogs/${id}`)
+      .send(likesUpdated)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200)
 
     const blogsAtEnd = await helper.blogsInDb()
 
-    const updatedBlog = blogsAtEnd.find((blog) => blog.id === blogToUpdate.id)
+    const updatedBlog = blogsAtEnd.find((blog) => blog.id === id)
 
     assert.strictEqual(updatedBlog.title, newBlog.title)
     assert.strictEqual(updatedBlog.author, newBlog.author)
     assert.strictEqual(updatedBlog.url, newBlog.url)
-    assert.strictEqual(updatedBlog.likes, newBlog.likes)
+    assert.strictEqual(updatedBlog.likes, newBlog.likes + 1)
   })
+})
 
-  after(() => {
-    mongoose.connection.close()
-  })
+after(() => {
+  mongoose.connection.close()
 })

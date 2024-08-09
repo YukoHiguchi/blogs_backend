@@ -80,6 +80,20 @@ describe('users', () => {
 
     assert.strictEqual(usersAtEnd.length, usersAtStart.length)
   })
+  test('a valid user can be fetched by id', async () => {
+    const newUser = {
+      username: 'newuser',
+      name: 'New User',
+      password: 'password',
+    }
+
+    const response = await api.post('/api/users').send(newUser).expect(201)
+
+    const findUser = await api.get(`/api/users/${response.id}`)
+
+    assert.strictEqual(response.body.username, findUser.username)
+    assert.strictEqual(response.body.name, findUser.name)
+  })
 
   after(() => {
     mongoose.connection.close()

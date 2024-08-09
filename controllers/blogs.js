@@ -1,14 +1,41 @@
 /* eslint-disable no-unused-vars */
-const jwt = require('jsonwebtoken')
 const router = require('express').Router()
 const Blog = require('../models/blog')
-const User = require('../models/user')
+const Comment = require('../models/comment')
 const userExtractor = require('../utils/middleware').userExtractor
+
+router.post('/:id/comments', async (request, response) => {
+  const blog = await Blog.findById(request.params.id)
+  if (!blog) {
+    return response.status(404).json({ error: 'Blog not found' })
+  }
+  console.log('request.body', request.body)
+  const comment = new Comment(request.body)
+  comment.blog = blog._id
+  await comment.save()
+
+  blog.comments = blog.comments.concat(comment._id)
+  await blog.save()
+  response.status(201).json(comment)
+})
 
 router.get('/', async (request, response) => {
   const blogs = await Blog.find({}).populate('user', { username: 1, name: 1 })
 
   response.json(blogs)
+})
+
+router.get('/:id', async (request, response) => {
+  const blog = await Blog.findById(request.params.id)
+    .populate('user', {
+      username: 1,
+      name: 1,
+    })
+    .populate('comments')
+  if (!blog) {
+    return response.status(404).json({ error: 'Blog not found' })
+  }
+  response.json(blog)
 })
 
 router.post('/', userExtractor, async (request, response) => {
@@ -48,6 +75,8 @@ router.delete('/:id', userExtractor, async (request, response) => {
 
   await blog.deleteOne()
 
+  await Comment.deleteMany({ blog: blog._id })
+
   user.blogs = user.blogs.filter(
     (b) => b._id.toString() !== blog._id.toString()
   )
@@ -66,7 +95,7 @@ router.put('/:id', userExtractor, async (request, response) => {
     author: body.author,
     url: body.url,
     likes: body.likes,
-    user: body.user.id,
+    user: user.id,
   }
 
   const updatedBlog = await Blog.findByIdAndUpdate(request.params.id, blog, {
